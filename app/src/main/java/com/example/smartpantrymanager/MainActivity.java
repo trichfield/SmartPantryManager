@@ -1,24 +1,56 @@
 package com.example.smartpantrymanager;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    RecyclerView recyclerView;
+    FloatingActionButton fabAdd;
+    DatabaseHelper dbHelper;
+    PantryAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        recyclerView = findViewById(R.id.recyclerView);
+        fabAdd = findViewById(R.id.fabAdd);
+        dbHelper = new DatabaseHelper(this);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        fabAdd.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+            startActivity(intent);
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadPantryItems();
+    }
+
+    private void loadPantryItems() {
+        List<PantryItem> itemList = dbHelper.getAllItems();
+        adapter = new PantryAdapter(this, itemList);
+        recyclerView.setAdapter(adapter);
+
+        if(itemList.isEmpty()){
+            Toast.makeText(this, "Pantry is empty, add something!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Pantry Loaded! " + itemList.size() + " items", Toast.LENGTH_SHORT).show();
+        }
     }
 }
