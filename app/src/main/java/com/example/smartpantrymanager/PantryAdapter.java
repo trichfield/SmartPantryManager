@@ -1,6 +1,7 @@
 package com.example.smartpantrymanager;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,32 @@ public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.ViewHolder
         PantryItem item = itemList.get(position);
         holder.tvName.setText(item.getName());
         holder.tvDetails.setText(item.getQuantity() + " " + item.getUnit() + " | Exp: " + item.getExpiryDate());
+
+        // LONG PRESS FOR EDIT / DELETE - PDF requires full CRUD
+        holder.itemView.setOnLongClickListener(v -> {
+            new androidx.appcompat.app.AlertDialog.Builder(context)
+                    .setTitle(item.getName())
+                    .setItems(new String[]{"Edit", "Delete"}, (dialog, which) -> {
+                        if (which == 0) {
+                            // EDIT
+                            Intent intent = new Intent(context, AddEditActivity.class);
+                            intent.putExtra("id", item.getId());
+                            intent.putExtra("name", item.getName());
+                            intent.putExtra("qty", item.getQuantity());
+                            intent.putExtra("unit", item.getUnit());
+                            intent.putExtra("expiry", item.getExpiryDate());
+                            context.startActivity(intent);
+                        } else {
+                            // DELETE
+                            DatabaseHelper db = new DatabaseHelper(context);
+                            db.deletePantryItem(item.getId());
+                            itemList.remove(holder.getAdapterPosition());
+                            notifyDataSetChanged();
+                        }
+                    })
+                    .show();
+            return true;
+        });
     }
 
     @Override
