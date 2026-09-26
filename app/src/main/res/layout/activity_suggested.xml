@@ -23,10 +23,9 @@
         android:id="@+id/tvNoRecipes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No recipes match your pantry yet - add more ingredients"
+        android:text="No recipes match your pantry yet"
         android:visibility="gone"
         android:padding="20dp"
-        android:textSize="16sp"
         android:gravity="center"/>
 
     <androidx.recyclerview.widget.RecyclerView

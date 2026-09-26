@@ -7,6 +7,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class AddEditActivity extends AppCompatActivity {
+
     EditText etName, etQty, etUnit, etExpiry;
     Button btnSave;
     DatabaseHelper dbHelper;
@@ -38,14 +39,11 @@ public class AddEditActivity extends AppCompatActivity {
             String unit = etUnit.getText().toString().trim();
             String expiry = etExpiry.getText().toString().trim();
 
-            if (name.isEmpty()) {
-                etName.setError("Required");
+            if (name.isEmpty() || qtyStr.isEmpty()) {
+                Toast.makeText(this, "Name and quantity required", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (qtyStr.isEmpty()) {
-                etQty.setError("Required");
-                return;
-            }
+
             double qty = Double.parseDouble(qtyStr);
             if (qty <= 0) {
                 etQty.setError("Quantity must be > 0");
@@ -53,11 +51,14 @@ public class AddEditActivity extends AppCompatActivity {
             }
 
             if (editId == -1) {
-                dbHelper.addPantryItem(name, qty, unit, expiry);
+                PantryItem item = new PantryItem(name, qty, unit, expiry);
+                dbHelper.addPantryItem(item);
             } else {
-                dbHelper.updatePantryItem(editId, name, qty, unit, expiry);
+                PantryItem item = new PantryItem(name, qty, unit, expiry);
+                item.setId(editId);
+                dbHelper.updatePantryItem(item);
             }
-            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+
             finish();
         });
     }

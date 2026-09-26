@@ -1,19 +1,21 @@
 package com.example.smartpantrymanager;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.ViewHolder> {
 
-    private Context context;
-    private List<PantryItem> itemList;
+    Context context;
+    List<PantryItem> itemList;
 
     public PantryAdapter(Context context, List<PantryItem> itemList) {
         this.context = context;
@@ -31,32 +33,33 @@ public class PantryAdapter extends RecyclerView.Adapter<PantryAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         PantryItem item = itemList.get(position);
         holder.tvName.setText(item.getName());
-        holder.tvDetails.setText(item.getQuantity() + " " + item.getUnit() + " | Exp: " + item.getExpiryDate());
+        String details = item.getQuantity() + " " + item.getUnit();
+        if (item.getExpiry() != null && !item.getExpiry().isEmpty()) {
+            details += " - Exp: " + item.getExpiry();
+        }
+        holder.tvDetails.setText(details);
 
-        // LONG PRESS FOR EDIT / DELETE - PDF requires full CRUD
-        holder.itemView.setOnLongClickListener(v -> {
-            new androidx.appcompat.app.AlertDialog.Builder(context)
+        holder.itemView.setOnClickListener(v -> {
+            new AlertDialog.Builder(context)
                     .setTitle(item.getName())
-                    .setItems(new String[]{"Edit", "Delete"}, (dialog, which) -> {
-                        if (which == 0) {
-                            // EDIT
-                            Intent intent = new Intent(context, AddEditActivity.class);
-                            intent.putExtra("id", item.getId());
-                            intent.putExtra("name", item.getName());
-                            intent.putExtra("qty", item.getQuantity());
-                            intent.putExtra("unit", item.getUnit());
-                            intent.putExtra("expiry", item.getExpiryDate());
-                            context.startActivity(intent);
-                        } else {
-                            // DELETE
-                            DatabaseHelper db = new DatabaseHelper(context);
-                            db.deletePantryItem(item.getId());
-                            itemList.remove(holder.getAdapterPosition());
-                            notifyDataSetChanged();
-                        }
+                    .setMessage("What do you want to do?")
+                    .setPositiveButton("Edit", (DialogInterface d, int w) -> {
+                        Intent i = new Intent(context, AddEditActivity.class);
+                        i.putExtra("id", item.getId());
+                        i.putExtra("name", item.getName());
+                        i.putExtra("qty", item.getQuantity());
+                        i.putExtra("unit", item.getUnit());
+                        i.putExtra("expiry", item.getExpiry());
+                        context.startActivity(i);
                     })
+                    .setNegativeButton("Delete", (DialogInterface d, int w) -> {
+                        DatabaseHelper db = new DatabaseHelper(context);
+                        db.deletePantryItem(item.getId());
+                        itemList.remove(position);
+                        notifyDataSetChanged();
+                    })
+                    .setNeutralButton("Cancel", null)
                     .show();
-            return true;
         });
     }
 

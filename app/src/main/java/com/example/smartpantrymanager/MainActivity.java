@@ -2,55 +2,49 @@ package com.example.smartpantrymanager;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
+import androidx.fragment.app.Fragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
-
-    RecyclerView recyclerView;
-    FloatingActionButton fabAdd;
-    DatabaseHelper dbHelper;
-    PantryAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        recyclerView = findViewById(R.id.recyclerView);
-        fabAdd = findViewById(R.id.fabAdd);
-        dbHelper = new DatabaseHelper(this);
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        FloatingActionButton fab = findViewById(R.id.fab);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new PantryFragment()).commit();
 
-        fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
-            startActivity(intent);
+        bottomNav.setOnItemSelectedListener(item -> {
+            Fragment selected = null;
+            int id = item.getItemId();
+            if (id == R.id.navigation_pantry) {
+                selected = new PantryFragment();
+            } else if (id == R.id.navigation_recipes) {
+                selected = new RecipesFragment();
+            } else if (id == R.id.navigation_suggested) {
+                startActivity(new Intent(MainActivity.this, SuggestedActivity.class));
+                return true;
+            } else if (id == R.id.navigation_settings) {
+                selected = new SettingsFragment();
+            }
+
+            if (selected != null) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selected).commit();
+                return true;
+            }
+            return false;
         });
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadPantryItems();
-    }
-
-    private void loadPantryItems() {
-        List<PantryItem> itemList = dbHelper.getAllItems();
-        adapter = new PantryAdapter(this, itemList);
-        recyclerView.setAdapter(adapter);
-
-        if(itemList.isEmpty()){
-            Toast.makeText(this, "Pantry is empty, add something!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Pantry Loaded! " + itemList.size() + " items", Toast.LENGTH_SHORT).show();
-        }
+        fab.setOnClickListener(v -> {
+            Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (current instanceof PantryFragment || current instanceof RecipesFragment) {
+                startActivity(new Intent(this, AddEditActivity.class));
+            }
+        });
     }
 }

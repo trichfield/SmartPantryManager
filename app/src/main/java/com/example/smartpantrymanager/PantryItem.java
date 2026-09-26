@@ -3,28 +3,27 @@ package com.example.smartpantrymanager;
 public class PantryItem {
     private int id;
     private String name;
-    private String quantity;
+    private double quantity;
     private String unit;
-    private String expiryDate;
+    private String expiry;
 
-    public PantryItem(int id, String name, String quantity, String unit, String expiryDate) {
-        this.id = id;
+    public PantryItem() {}
+
+    public PantryItem(String name, double quantity, String unit, String expiry) {
         this.name = name;
         this.quantity = quantity;
         this.unit = unit;
-        this.expiryDate = expiryDate;
-    }
-
-    public PantryItem(String name, String quantity, String unit, String expiryDate) {
-        this.name = name;
-        this.quantity = quantity;
-        this.unit = unit;
-        this.expiryDate = expiryDate;
+        this.expiry = expiry;
     }
 
     public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getName() { return name; }
-    public String getQuantity() { return quantity; }
+    public void setName(String name) { this.name = name; }
+    public double getQuantity() { return quantity; }
+    public void setQuantity(double quantity) { this.quantity = quantity; }
     public String getUnit() { return unit; }
-    public String getExpiryDate() { return expiryDate; }
+    public void setUnit(String unit) { this.unit = unit; }
+    public String getExpiry() { return expiry; }
+    public void setExpiry(String expiry) { this.expiry = expiry; }
 }

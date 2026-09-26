@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,12 +14,11 @@ import java.util.List;
 
 public class SuggestedActivity extends AppCompatActivity {
 
-    RecyclerView recyclerSuggested;
-    TextView tvNoRecipes;
-    Button btnFind;
-    DatabaseHelper dbHelper;
-    List<Recipe> allRecipes;
-    List<PantryItem> pantryItems;
+    private RecyclerView recyclerSuggested;
+    private Button btnFindRecipes;
+    private TextView tvNoRecipes;
+    private DatabaseHelper dbHelper;
+    private RecipeAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,79 +26,70 @@ public class SuggestedActivity extends AppCompatActivity {
         setContentView(R.layout.activity_suggested);
 
         recyclerSuggested = findViewById(R.id.recyclerSuggested);
+        btnFindRecipes = findViewById(R.id.btnFindRecipes);
         tvNoRecipes = findViewById(R.id.tvNoRecipes);
-        btnFind = findViewById(R.id.btnFindRecipes);
-
-        recyclerSuggested.setLayoutManager(new LinearLayoutManager(this));
         dbHelper = new DatabaseHelper(this);
 
-        btnFind.setOnClickListener(v -> findRecipes());
-        findRecipes();
+        recyclerSuggested.setLayoutManager(new LinearLayoutManager(this));
+
+        btnFindRecipes.setOnClickListener(v -> showSuggestedRecipes());
+
+        showSuggestedRecipes();
     }
 
-    private void findRecipes() {
-        allRecipes = dbHelper.getAllRecipes();
-        pantryItems = dbHelper.getAllPantryItems();
-        List<Recipe> suggestedList = new ArrayList<>();
+    private void showSuggestedRecipes() {
+        List<PantryItem> pantryItems = dbHelper.getAllPantryItems();
+        List<String> pantryNames = new ArrayList<>();
+        for (PantryItem item : pantryItems) {
+            pantryNames.add(item.getName().trim().toLowerCase());
+        }
+
+        List<Recipe> allRecipes = dbHelper.getAllRecipes();
+        List<Recipe> perfectMatches = new ArrayList<>();
 
         for (Recipe recipe : allRecipes) {
-            if (canMakeRecipe(recipe, pantryItems)) {
-                suggestedList.add(recipe);
+            String ingString = recipe.getIngredients();
+            if (ingString == null) continue;
+
+            String[] parts = ingString.split(",");
+            List<String> recipeIngredients = new ArrayList<>();
+            for (String p : parts) {
+                if (!p.trim().isEmpty()) {
+                    recipeIngredients.add(p.trim().toLowerCase());
+                }
+            }
+
+            if (recipeIngredients.size() != 3) {
+                continue;
+            }
+
+            int matchCount = 0;
+            for (String req : recipeIngredients) {
+                if (pantryNames.contains(req)) {
+                    matchCount++;
+                }
+            }
+
+            if (matchCount == 3) {
+                perfectMatches.add(recipe);
             }
         }
 
-        if (suggestedList.isEmpty()) {
+        if (perfectMatches.isEmpty()) {
             tvNoRecipes.setVisibility(View.VISIBLE);
             recyclerSuggested.setVisibility(View.GONE);
+            Toast.makeText(this, "No perfect match - add more pantry items", Toast.LENGTH_LONG).show();
+            adapter = new RecipeAdapter(perfectMatches, recipe -> {});
+            recyclerSuggested.setAdapter(adapter);
         } else {
             tvNoRecipes.setVisibility(View.GONE);
             recyclerSuggested.setVisibility(View.VISIBLE);
-            RecipeAdapter adapter = new RecipeAdapter(suggestedList, recipe -> {
+            adapter = new RecipeAdapter(perfectMatches, recipe -> {
                 Intent intent = new Intent(SuggestedActivity.this, RecipeDetailActivity.class);
-                intent.putExtra("recipe_name", recipe.getName());
-                intent.putExtra("recipe_ingredients", recipe.getIngredients());
-                intent.putExtra("recipe_instructions", recipe.getInstructions());
+                intent.putExtra("recipe_id", recipe.getId());
                 startActivity(intent);
             });
             recyclerSuggested.setAdapter(adapter);
         }
-    }
-
-    private boolean canMakeRecipe(Recipe recipe, List<PantryItem> pantry) {
-        String[] requiredItems = recipe.getIngredients().split(",");
-
-        for (String req : requiredItems) {
-            req = req.trim().toLowerCase();
-            if (req.isEmpty()) continue;
-
-            String[] parts = req.split(":");
-            String reqName = parts[0].trim().toLowerCase();
-            reqName = normalizeName(reqName);
-
-            boolean found = false;
-            for (PantryItem pItem : pantry) {
-                String pantryName = normalizeName(pItem.getName().toLowerCase());
-                if (pantryName.equals(reqName)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private String normalizeName(String name) {
-        name = name.trim().toLowerCase();
-        if (name.endsWith("es")) {
-            String singular = name.substring(0, name.length() - 2);
-            if (singular.length() > 2) return singular;
-        }
-        if (name.endsWith("s") && name.length() > 3) {
-            return name.substring(0, name.length() - 1);
-        }
-        return name;
     }
 }
